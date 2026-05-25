@@ -20,19 +20,18 @@ from tqdm import tqdm
 
 
 def compute_fpr95(labels, scores):
-
     fpr, tpr, thresholds = roc_curve(labels, scores)
     idx = np.abs(tpr - 0.95).argmin()  # Find the index where TPR is closest to 0.95
     fpr95 = fpr[idx]
 
     return fpr95
 
-def compute_auroc(labels, scores):
 
+def compute_auroc(labels, scores):
     return roc_auc_score(labels, scores)
 
-def compute_aupr(labels, scores):
 
+def compute_aupr(labels, scores):
     precision, recall, _ = precision_recall_curve(labels, scores)
     return auc(recall, precision)
 
@@ -40,7 +39,7 @@ def compute_aupr(labels, scores):
 # Compute metrics
 
 
-def get_clean_AUC(model, test_loader , device, num_classes):
+def get_clean_AUC(model, test_loader, device, num_classes):
     is_train = model.training
     model.eval()
 
@@ -64,15 +63,15 @@ def get_clean_AUC(model, test_loader , device, num_classes):
                 # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist() model
 
                 probs = soft(output)
-                max_probabilities,_ = torch.max(probs[:,:num_classes] , dim=1)
-                anomaly_scores+=max_probabilities.detach().cpu().numpy().tolist()
+                max_probabilities, _ = torch.max(probs[:, :num_classes], dim=1)
+                anomaly_scores += max_probabilities.detach().cpu().numpy().tolist()
                 # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
                 target = target == num_classes
 
                 test_labels += target.detach().cpu().numpy().tolist()
-    anomaly_scores=[x * -1 for x in anomaly_scores]
-    auc = roc_auc_score(test_labels,  anomaly_scores)
- 
+    anomaly_scores = [x * -1 for x in anomaly_scores]
+    auc = roc_auc_score(test_labels, anomaly_scores)
+
     fpr95 = compute_fpr95(test_labels, anomaly_scores)
     auroc = compute_auroc(test_labels, anomaly_scores)
     aupr = compute_aupr(test_labels, anomaly_scores)
@@ -84,13 +83,13 @@ def get_clean_AUC(model, test_loader , device, num_classes):
     return auc
 
 
-
 def wrapper_method(func):
     def wrapper_func(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
         for atk in self.__dict__.get('_attacks').values():
-            eval("atk."+func.__name__+"(*args, **kwargs)")
+            eval("atk." + func.__name__ + "(*args, **kwargs)")
         return result
+
     return wrapper_func
 
 
@@ -146,7 +145,7 @@ class Attack(object):
         tol = 1e-4
         if self._normalization_applied:
             images = self.inverse_normalize(images)
-        if torch.max(images) > 1+tol or torch.min(images) < 0-tol:
+        if torch.max(images) > 1 + tol or torch.min(images) < 0 - tol:
             raise ValueError('Input must have a range [0, 1] (max: {}, min: {})'.format(
                 torch.max(images), torch.min(images)))
         return images
@@ -187,6 +186,7 @@ class Attack(object):
                     std = std.cpu().numpy()
                 if (mean != 0).all() or (std != 1).all():
                     self.set_normalization_used(mean, std)
+
     #                 logging.info("Normalization automatically loaded from `model.mean` and `model.std`.")
 
     @wrapper_method
@@ -206,7 +206,7 @@ class Attack(object):
     def inverse_normalize(self, inputs):
         mean = self.normalization_used['mean'].to(inputs.device)
         std = self.normalization_used['std'].to(inputs.device)
-        return inputs*std + mean
+        return inputs * std + mean
 
     def get_mode(self):
         r"""
@@ -373,9 +373,9 @@ class Attack(object):
                     l2 = torch.cat(l2_distance).mean().item()
 
                     # Calculate time computation
-                    progress = (step+1)/total_batch*100
+                    progress = (step + 1) / total_batch * 100
                     end = time.time()
-                    elapsed_time = end-start
+                    elapsed_time = end - start
 
                     if verbose:
                         self._save_print(progress, rob_acc, l2, elapsed_time, end='\r')
@@ -429,10 +429,10 @@ class Attack(object):
         """
         if type == 'int':
             if isinstance(inputs, torch.FloatTensor) or isinstance(inputs, torch.cuda.FloatTensor):
-                return (inputs*255).type(torch.uint8)
+                return (inputs * 255).type(torch.uint8)
         elif type == 'float':
             if isinstance(inputs, torch.ByteTensor) or isinstance(inputs, torch.cuda.ByteTensor):
-                return inputs.float()/255
+                return inputs.float() / 255
         else:
             raise ValueError(
                 type + " is not a valid type. [Options: float, int]")
@@ -455,7 +455,7 @@ class Attack(object):
             keys.append('clean_inputs')
 
         if save_dict['save_type'] == 'int':
-            save_dict['adv_inputs'] = save_dict['adv_inputs'].float()/255
+            save_dict['adv_inputs'] = save_dict['adv_inputs'].float() / 255
             if load_clean_inputs:
                 save_dict['clean_inputs'] = save_dict['clean_inputs'].float() / 255  # nopep8
 
@@ -524,7 +524,7 @@ class Attack(object):
         for counter in range(labels.shape[0]):
             l = list(range(n_classses))
             l.remove(labels[counter])
-            t = (len(l)*torch.rand([1])).long().to(self.device)
+            t = (len(l) * torch.rand([1])).long().to(self.device)
             target_labels[counter] = l[t]
 
         return target_labels.long().to(self.device)
@@ -566,7 +566,7 @@ class Attack(object):
                 stack.append(items)
                 if isinstance(items, list) or isinstance(items, dict):
                     if isinstance(items, dict):
-                        items = (list(items.keys())+list(items.values()))
+                        items = (list(items.keys()) + list(items.values()))
                     for item in items:
                         yield from get_all_values(item, stack)
                 else:
@@ -577,16 +577,12 @@ class Attack(object):
                     yield items
 
         for num, value in enumerate(get_all_values(value)):
-            attacks[name+"."+str(num)] = value
+            attacks[name + "." + str(num)] = value
             for subname, subvalue in value.__dict__.get('_attacks').items():
-                attacks[name+"."+subname] = subvalue
+                attacks[name + "." + subname] = subvalue
 
 
-
-
-
-
-def get_auc_adversarial(model, test_loader, test_attack,   device, num_classes):
+def get_auc_adversarial(model, test_loader, test_attack, device, num_classes):
     is_train = model.training
     model.eval()
 
@@ -596,21 +592,21 @@ def get_auc_adversarial(model, test_loader, test_attack,   device, num_classes):
     test_labels = []
     test_labels_acc = []
     with tqdm(test_loader, unit="batch") as tepoch:
-            torch.cuda.empty_cache()
-            for i, (data, target) in enumerate(tepoch):
-                data, target = data.to(device), target.to(device)
-                adv_data = test_attack(data, target)
-                output  = model(adv_data)
-                predictions = output.argmax(dim=1, keepdim=True).squeeze()
-                preds += predictions.detach().cpu().numpy().tolist()
-                probs = soft(output)
-                max_probabilities,_ = torch.max(probs[:,:num_classes] , dim=1)
-                anomaly_scores+=max_probabilities.detach().cpu().numpy().tolist()
-                target = target == num_classes
+        torch.cuda.empty_cache()
+        for i, (data, target) in enumerate(tepoch):
+            data, target = data.to(device), target.to(device)
+            adv_data = test_attack(data, target)
+            output = model(adv_data)
+            predictions = output.argmax(dim=1, keepdim=True).squeeze()
+            preds += predictions.detach().cpu().numpy().tolist()
+            probs = soft(output)
+            max_probabilities, _ = torch.max(probs[:, :num_classes], dim=1)
+            anomaly_scores += max_probabilities.detach().cpu().numpy().tolist()
+            target = target == num_classes
 
-                test_labels += target.detach().cpu().numpy().tolist()
-    anomaly_scores=[x * -1 for x in anomaly_scores]
-    auc = roc_auc_score(test_labels,  anomaly_scores)
+            test_labels += target.detach().cpu().numpy().tolist()
+    anomaly_scores = [x * -1 for x in anomaly_scores]
+    auc = roc_auc_score(test_labels, anomaly_scores)
     fpr95 = compute_fpr95(test_labels, anomaly_scores)
     auroc = compute_auroc(test_labels, anomaly_scores)
     aupr = compute_aupr(test_labels, anomaly_scores)
@@ -619,17 +615,12 @@ def get_auc_adversarial(model, test_loader, test_attack,   device, num_classes):
     print(f"AUROC is: {auroc}")
     print(f"AUPR: {aupr}")
 
-
     if is_train:
         model.train()
     else:
         model.eval()
 
     return auc
-
-
-
-
 
 
 class PGD_AUC(Attack):
@@ -657,7 +648,7 @@ class PGD_AUC(Attack):
 
     """
 
-    def __init__(self, model, eps=8/255, alpha=2/255, steps=10, random_start=True, num_classes=10):
+    def __init__(self, model, eps=8 / 255, alpha=2 / 255, steps=10, random_start=True, num_classes=10):
         super().__init__("PGD", model)
         self.eps = eps
         self.alpha = alpha
@@ -680,11 +671,11 @@ class PGD_AUC(Attack):
         if self.random_start:
             # Starting at a uniformly random point
             adv_images = adv_images + \
-                torch.empty_like(adv_images).uniform_(-self.eps, self.eps)
+                         torch.empty_like(adv_images).uniform_(-self.eps, self.eps)
             adv_images = torch.clamp(adv_images, min=0, max=1).detach()
 
         ones = torch.ones_like(labels)
-        multipliers = -1*(ones - 2 * ones * (labels == self.num_classes))
+        multipliers = -1 * (ones - 2 * ones * (labels == self.num_classes))
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
@@ -692,30 +683,22 @@ class PGD_AUC(Attack):
             final_outputs = softmax(outputs)
             # choose the value of probability of ood
 
-            max_probabilities  = torch.max(final_outputs  , dim=1)[0]
-
-
+            max_probabilities = torch.max(final_outputs, dim=1)[0]
 
             cost = torch.sum(max_probabilities * multipliers)
-
-
 
             # Update adversarial images
             grad = torch.autograd.grad(cost, adv_images,
                                        retain_graph=False, create_graph=False)[0]
 
-            adv_images = adv_images.detach() + self.alpha*grad.sign()
+            adv_images = adv_images.detach() + self.alpha * grad.sign()
             delta = torch.clamp(adv_images - images,
                                 min=-self.eps, max=self.eps)
             adv_images = torch.clamp(images + delta, min=0, max=1).detach()
         return adv_images
 
 
-
-
-
-
-def auc_MSP_adversarial(model, test_loader, test_attack,   device, num_classes):
+def auc_MSP_adversarial(model, test_loader, test_attack, device, num_classes):
     is_train = model.training
     model.eval()
 
@@ -725,33 +708,29 @@ def auc_MSP_adversarial(model, test_loader, test_attack,   device, num_classes):
     test_labels = []
     test_labels_acc = []
     with tqdm(test_loader, unit="batch") as tepoch:
-            torch.cuda.empty_cache()
-            for i, (data, target) in enumerate(tepoch):
-                data, target = data.to(device), target.to(device)
-                adv_data = test_attack(data, target)
+        torch.cuda.empty_cache()
+        for i, (data, target) in enumerate(tepoch):
+            data, target = data.to(device), target.to(device)
+            adv_data = test_attack(data, target)
 
-                output  = model(adv_data)
+            output = model(adv_data)
 
-                predictions = output.argmax(dim=1, keepdim=True).squeeze()
-                preds += predictions.detach().cpu().numpy().tolist()
+            predictions = output.argmax(dim=1, keepdim=True).squeeze()
+            preds += predictions.detach().cpu().numpy().tolist()
 
-                # probs = soft(output).squeeze()
-                # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
+            # probs = soft(output).squeeze()
+            # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
 
+            probs = soft(output)
 
-                probs = soft(output)
+            max_probabilities, _ = torch.max(probs[:, :num_classes], dim=1)
 
-                max_probabilities,_ = torch.max(probs[:,:num_classes] , dim=1)
-
-
-
-
-                anomaly_scores+=max_probabilities.detach().cpu().numpy().tolist()
-                # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
-                target = target == num_classes
-                test_labels += target.detach().cpu().numpy().tolist()
-    anomaly_scores=[x * -1 for x in anomaly_scores]
-    auc = roc_auc_score(test_labels,  anomaly_scores)
+            anomaly_scores += max_probabilities.detach().cpu().numpy().tolist()
+            # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
+            target = target == num_classes
+            test_labels += target.detach().cpu().numpy().tolist()
+    anomaly_scores = [x * -1 for x in anomaly_scores]
+    auc = roc_auc_score(test_labels, anomaly_scores)
 
     if is_train:
         model.train()
@@ -787,7 +766,7 @@ class PGD_MSP(Attack):
 
     """
 
-    def __init__(self, model, eps=8/255, alpha=2/255, steps=10, random_start=True, num_classes=10):
+    def __init__(self, model, eps=8 / 255, alpha=2 / 255, steps=10, random_start=True, num_classes=10):
         super().__init__("PGD", model)
         self.eps = eps
         self.alpha = alpha
@@ -810,11 +789,11 @@ class PGD_MSP(Attack):
         if self.random_start:
             # Starting at a uniformly random point
             adv_images = adv_images + \
-                torch.empty_like(adv_images).uniform_(-self.eps, self.eps)
+                         torch.empty_like(adv_images).uniform_(-self.eps, self.eps)
             adv_images = torch.clamp(adv_images, min=0, max=1).detach()
 
         ones = torch.ones_like(labels)
-        multipliers = -1*(ones - 2 * ones * (labels == self.num_classes))
+        multipliers = -1 * (ones - 2 * ones * (labels == self.num_classes))
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
@@ -822,19 +801,15 @@ class PGD_MSP(Attack):
             final_outputs = softmax(outputs)
             # choose the value of probability of ood
 
-            max_probabilities  = torch.max(final_outputs  , dim=1)[0]
-
-
+            max_probabilities = torch.max(final_outputs, dim=1)[0]
 
             cost = torch.sum(max_probabilities * multipliers)
-
-
 
             # Update adversarial images
             grad = torch.autograd.grad(cost, adv_images,
                                        retain_graph=False, create_graph=False)[0]
 
-            adv_images = adv_images.detach() + self.alpha*grad.sign()
+            adv_images = adv_images.detach() + self.alpha * grad.sign()
             delta = torch.clamp(adv_images - images,
                                 min=-self.eps, max=self.eps)
             adv_images = torch.clamp(images + delta, min=0, max=1).detach()
@@ -844,10 +819,7 @@ class PGD_MSP(Attack):
         return adv_images
 
 
-
-
-
-def auc_MSP(model, test_loader , device, num_classes):
+def auc_MSP(model, test_loader, device, num_classes):
     is_train = model.training
     model.eval()
 
@@ -871,16 +843,15 @@ def auc_MSP(model, test_loader , device, num_classes):
                 # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist() model
 
                 probs = soft(output)
-                max_probabilities,_ = torch.max(probs[:,:num_classes] , dim=1)
-                anomaly_scores+=max_probabilities.detach().cpu().numpy().tolist()
+                max_probabilities, _ = torch.max(probs[:, :num_classes], dim=1)
+                anomaly_scores += max_probabilities.detach().cpu().numpy().tolist()
                 # anomaly_scores += probs[:, num_classes].detach().cpu().numpy().tolist()
                 target = target == num_classes
 
                 test_labels += target.detach().cpu().numpy().tolist()
-    anomaly_scores=[x * -1 for x in anomaly_scores]
-    auc = roc_auc_score(test_labels,  anomaly_scores)
+    anomaly_scores = [x * -1 for x in anomaly_scores]
+    auc = roc_auc_score(test_labels, anomaly_scores)
     print(auc)
-
 
     return auc
 

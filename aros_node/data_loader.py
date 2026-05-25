@@ -1,18 +1,14 @@
 import torch
 import torchvision
-from torch.utils.data import DataLoader, Dataset,Subset, SubsetRandomSampler, TensorDataset, ConcatDataset
+from torch.utils.data import DataLoader, Dataset, Subset, SubsetRandomSampler, TensorDataset, ConcatDataset
 from torchvision import datasets, transforms, models
 from torchvision.datasets import CIFAR10, CIFAR100, MNIST, SVHN, FashionMNIST
 
-
-#1
+# 1
 transform_euro = transforms.Compose([
     transforms.ToTensor(),
 
 ])
-
-
- 
 
 
 class LabelChangedDataset(Dataset):
@@ -28,7 +24,6 @@ class LabelChangedDataset(Dataset):
         return image, self.new_label
 
 
-
 def get_subsampled_subset(dataset, subset_ratio=0.1):
     subset_size = int(len(dataset) * subset_ratio)
     remaining_size = len(dataset) - subset_size
@@ -37,6 +32,7 @@ def get_subsampled_subset(dataset, subset_ratio=0.1):
     subset_testset = Subset(dataset, subset_indices.indices)
 
     return subset_testset
+
 
 '''
 transform_tensor = transforms.Compose([ transforms.ToTensor()])
@@ -63,7 +59,7 @@ trainset_CIFAR100 = torchvision.datasets.CIFAR100(
 testset_CIFAR100 = torchvision.datasets.CIFAR100(
     root='./data', train=False, download=True, transform=transform_tensor)
 
- 
+
 
 trainloader_CIFAR100 = DataLoader(trainset_CIFAR100, batch_size=64, shuffle=True, num_workers=2)
 
@@ -82,8 +78,10 @@ testset_CIFAR100_relabled = LabelChangedDataset(testset_CIFAR100, new_label=10)
 testloader_CIFAR10_vs_CIFAR100 = DataLoader(ConcatDataset([testset_CIFAR10, testset_CIFAR100_relabled]), shuffle=False, batch_size=8)
 testloader_CIFAR100_vs_CIFAR10 = DataLoader(ConcatDataset([testset_CIFAR100, testset_CIFAR10_relabled]), shuffle=False, batch_size=8)
 '''
+
+
 def get_loaders(in_dataset='CIFAR10'):
-    #2
+    # 2
     if in_dataset == 'eurosat':
         # Завантажуємо повний датасет
         full_dataset = datasets.ImageFolder(root='./data/eurosat', transform=transform_euro)
@@ -95,10 +93,10 @@ def get_loaders(in_dataset='CIFAR10'):
 
         trainloader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=0)
         testloader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=0)
-        transform_euro1= transforms.Compose([
-    transforms.Resize((64,64)),
-    transforms.ToTensor(),
-])
+        transform_euro1 = transforms.Compose([
+            transforms.Resize((64, 64)),
+            transforms.ToTensor(),
+        ])
         ood_dataset = torchvision.datasets.SVHN(
             root='./data',
             split='test',
